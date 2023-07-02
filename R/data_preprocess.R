@@ -1,32 +1,69 @@
-#' @title Data Preprocessing Function
-#' @description A function to preprocess data. Reads a data file if provided, 
-#' else it uses the given data matrix. Normalizes the data using the specified method. 
-#' Deals with missing values, and implements various conditional transformations and normalizations. 
-#' Sums and averages replicates. If class labels file is provided, it deals with class labels.
-#' @param Xmat Matrix of X values (default is NA)
-#' @param Ymat Matrix of Y values (default is NA)
-#' @param feature_table_file File path to feature table (default is NA)
-#' @param parentoutput_dir Directory for output
-#' @param class_labels_file File path to class labels (default is NA)
-#' @param num_replicates Number of replicates (default is 3)
-#' @param feat.filt.thresh Feature filtering threshold (default is NA)
-#' @param summarize.replicates Boolean flag to summarize replicates (default is TRUE)
-#' @param summary.method Method to summarize (default is "mean")
-#' @param all.missing.thresh Threshold for all missing values (default is 0.1)
-#' @param group.missing.thresh Threshold for group missing values (default is 0.8)
-#' @param normalization.method Method for normalization (default is "none")
-#' @param log2transform Boolean flag for log2 transformation (default is FALSE)
-#' @param medcenter Boolean flag for median centering (default is FALSE)
-#' @param znormtransform Boolean flag for Z Normalization (default is FALSE)
-#' @param quantile_norm Boolean flag for quantile normalization (default is FALSE)
-#' @param lowess_norm Boolean flag for Lowess normalization (default is FALSE)
-#' @param rangescaling Boolean flag for range scaling (default is FALSE)
-#' @param paretoscaling Boolean flag for pareto scaling (default is FALSE)
-#' @param mstus Boolean flag for MSTUS normalization (default is FALSE)
-#' @param sva_norm Boolean flag for SVA normalization (default is FALSE)
-#' @param TIC_norm Boolean flag for TIC normalization (default is FALSE)
-#' @param eigenms_norm Boolean flag for EigenMS normalization (default is FALSE)
-#' @param madscaling Boolean flag for MAD scaling (default is FALSE)
+#' @title data_preprocess
+#' @description This function performs data transformation, normalization
+#' @usage 
+#' data_preprocess(Xmat = NA, Ymat = NA, feature_table_file = NA,
+#'                 parentoutput_dir, class_labels_file = NA,
+#'                 num_replicates = 3, feat.filt.thresh = NA,
+#'                 summarize.replicates = TRUE, summary.method = "mean",
+#'                 all.missing.thresh = 0.5, group.missing.thresh = 0.7,
+#'                 log2transform = TRUE, medcenter = FALSE,
+#'                 znormtransform = FALSE, quantile_norm = TRUE,
+#'                 lowess_norm = FALSE, rangescaling = FALSE,
+#'                 paretoscaling = FALSE, mstus = FALSE, sva_norm =
+#'                 FALSE, TIC_norm = FALSE, eigenms_norm = FALSE,
+#'                 madscaling = FALSE, vsn_norm = FALSE, cubicspline_norm
+#'                 = FALSE, missing.val = 0, samplermindex = NA,
+#'                 rep.max.missing.thresh = 0.5, summary.na.replacement =
+#'                 "zeros", featselmethod = NA, pairedanalysis = FALSE,
+#'                 normalization.method = "none", input.intensity.scale =
+#'                 "raw", create.new.folder = TRUE)
+#' @param Xmat R object for feature table. If this is given, then feature table can be set to NA.
+#' @param Ymat R object for response/class labels matrix. If this is given, then class can be set to NA.
+#' @param feature_table_file Feature table that includes the mz, retention time, and measured intensity in each sample 
+#' for each analyte. The first 2 columns should be the mz and time. The remaining columns
+#' should correspond to the samples in the class labels file with each column including the intensity profile
+#' of a sample. Full path required.
+#' @param parentoutput_dir Provide full path of the folder where you want the results to be written.
+#' @param class_labels_file File with class labels information for each sample. Samples should be in the same order
+#' as in the feature table. Please use the same format as in the example folder.
+#' @param num_replicates Number of technical replicates
+#' @param feat.filt.thresh Percent Intensity Difference or Coefficient of variation threshold; feature filtering
+#' Use NA to skip this step.
+#' @param summarize.replicates Do the technical replicates per sample need to be averaged or median summarized?
+#' @param summary.method Method for summarizing the replicates. Options: "mean" or "median"
+#' @param summary.na.replacement How should the missing values be represented? 
+#' Options: "zeros", "halffeaturemin", "halfsamplemin","halfdatamin", "none"
+#' "zeros": replaces missing values by 0
+#' "halfsamplemin": replaces missing value by one-half of the lowest signal intensity in the
+#' corresponding sample
+#' "halfdatamin": replaces missing value by one-half of the lowest signal intensity in the
+#' complete dataset
+#' "halffeaturemin": replaces missing value by one-half of the lowest signal intensity for the
+#' current feature
+#' "none": keeps missing values as NAs
+#' Users are recommended to perform imputation prior to performing biomarker discovery.
+#' @param missing.val How are the missing values represented in the input data? Options: "0" or "NA"
+#' @param samplermindex Column index of any additional or irrelevant columns to be deleted.
+#' Options: "NA" or list of column numbers. eg: c(1,3,4) Default=NA
+#' @param rep.max.missing.thresh What propotion of replicates are allowed to have missing values during the averaging or 
+#' median summarization step of each biological sample? If the number of replicates with
+#' missing values is greater than the defined threshold, then the summarized value is 
+#' represented by the "missing.val" parameter. If the number of replicates with missing values
+#' is less than or equal to the defined threshold, then the summarized value is equal to the 
+#' mean or the median of the non-missing values. Default: 0.5
+#' @param all.missing.thresh What propotion of total number of samples should have an intensity?
+#' Default: 0.5
+#' @param group.missing.thresh What propotion of samples in either of the two groups should have an intensity?
+#' If at least x% of the samples in either group have a signal, then the feature is retained
+#' for further analysis. Default: 0.7
+#' @param log2transform Data transformation: Please refer to http://www.biomedcentral.com/1471-2164/7/142
+#' Try different combinations; such as log2transform=TRUE, znormtransfrom=FALSE
+#' or log2transform=FALSE, znormtransfrom=TRUE
+#' @param medcenter Median centering of metabolites
+#' @param znormtransform Auto scaling; each metabolite will have a mean of 0 and unit variance
+#' @param quantile_norm Performs quantile normalization. Normalization options: Please set only one of the options to be TRUE
+#' @param lowess_norm Performs lowess normalization. Normalization options: Please set only one of the options to be TRUE
+#' @param madscaling Performs median adjusted scale normalization. Normalization options: Please set only one of the options to be TRUE
 #' @param vsn_norm Boolean flag for VSN normalization (default is FALSE)
 #' @param cubicspline_norm Boolean flag for cubic spline normalization (default is FALSE)
 #' @param missing.val Value to replace missing data with (default is 0)
@@ -39,6 +76,8 @@
 #' @param create.new.folder Boolean flag to create new folder (default is TRUE)
 #' @param log2.transform.constant Constant for log2 transformation.
 #' @param alphabetical.order Boolean flag for alphabetical order (default is FALSE)
+#' @return Pre-processed data matrix.
+#' @author Karan Uppal <kuppal3gt@gmail.com>, Jiada James Zhan <jzha832@emory.edu>
 
 data_preprocess <- function(
   Xmat = NA,
