@@ -3,9 +3,52 @@ Type: Package
 Title: R Package for Biomarker Discovery, Network, and Data Exploratory Analysis
 Version: 1.3.2
 Date: 2021-05-14
-Author: Karan Uppal
-Maintainer: Karan Uppal <kuppal3gt@gmail.com>
+Author: Karan Uppal, Jiada James Zhan
+Maintainer: Jiada (James) Zhan, jzha832@emory.edu
 Description: Includes functions to perform feature selection for classification and regression, network analysis, data exploratory, normalization, and functional analysis.
 License: GPL2.0
 LazyLoad: yes
-Depends: R (>= 3.5.0), parallel, tidyverse,extrafont,RColorBrewer,MASS,limma, GO.db, statmod, rgl,gplots, e1071, randomForest, party,qvalue,fdrtool, earth, pROC, nlme, ROCR,flashClust,pamr, Boruta, sandwich, V8, lsmeans,car,impute, colourpicker, ggpubr,extrafont,shinyBS,shinyWidgets,shinycssloaders,mixOmics,plyr,plsgenomics,pls,igraph,reshape2,raster,tidyr,robust,lattice
+Depends: 
+  R (>= 3.5.0),
+  Boruta,
+  MASS,
+  V8,
+  ROCR,
+  car,
+  earth,
+  e1071,
+  extrafont,
+  fdrtool,
+  flashClust,
+  gplots,
+  GO.db,
+  ggpubr,
+  impute,
+  igraph,
+  lattice,
+  limma,
+  lsmeans,
+  mixOmics,
+  nlme,
+  pamr,
+  parallel,
+  party,
+  pls,
+  plsgenomics,
+  plyr,
+  pROC,
+  qvalue,
+  randomForest,
+  raster,
+  RColorBrewer,
+  reshape2,
+  rgl,
+  robust,
+  sandwich,
+  shinyBS,
+  shinycssloaders,
+  shinyWidgets,
+  statmod,
+  tidyr,
+  tidyverse,
+  colourpicker
