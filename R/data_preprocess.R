@@ -17,7 +17,7 @@
 #'                 "zeros", featselmethod = NA, pairedanalysis = FALSE,
 #'                 normalization.method = "none", input.intensity.scale =
 #'                 "raw", create.new.folder = TRUE)
-#' @param Xmat R object for feature table. If this is given, then feature table can be set to NA.
+#' @param Xmat R object for feature table. If this is given, it will be read directly. If not, read.table function will be used to read the feature table. 
 #' @param Ymat R object for response/class labels matrix. If this is given, then class can be set to NA.
 #' @param feature_table_file Feature table that includes the mz, retention time, and measured intensity in each sample 
 #' for each analyte. The first 2 columns should be the mz and time. The remaining columns
@@ -124,7 +124,7 @@ data_preprocess <- function(
   # Read the data file or use the given data matrix
   data_matrix <- ifelse(
     is.na(Xmat),
-    readr::read_table(feature_table_file, sep = "\t", col_names = TRUE, col_types = readr::cols(), na = character()),
+    utils::read.table(Xmat,sep="\t",header=TRUE,stringsAsFactors=FALSE,check.names=FALSE),
     Xmat
   )
 
