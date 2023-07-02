@@ -1,3 +1,45 @@
+#' @title Data Preprocessing Function
+#' @description A function to preprocess data. Reads a data file if provided, 
+#' else it uses the given data matrix. Normalizes the data using the specified method. 
+#' Deals with missing values, and implements various conditional transformations and normalizations. 
+#' Sums and averages replicates. If class labels file is provided, it deals with class labels.
+#' @param Xmat Matrix of X values (default is NA)
+#' @param Ymat Matrix of Y values (default is NA)
+#' @param feature_table_file File path to feature table (default is NA)
+#' @param parentoutput_dir Directory for output
+#' @param class_labels_file File path to class labels (default is NA)
+#' @param num_replicates Number of replicates (default is 3)
+#' @param feat.filt.thresh Feature filtering threshold (default is NA)
+#' @param summarize.replicates Boolean flag to summarize replicates (default is TRUE)
+#' @param summary.method Method to summarize (default is "mean")
+#' @param all.missing.thresh Threshold for all missing values (default is 0.1)
+#' @param group.missing.thresh Threshold for group missing values (default is 0.8)
+#' @param normalization.method Method for normalization (default is "none")
+#' @param log2transform Boolean flag for log2 transformation (default is FALSE)
+#' @param medcenter Boolean flag for median centering (default is FALSE)
+#' @param znormtransform Boolean flag for Z Normalization (default is FALSE)
+#' @param quantile_norm Boolean flag for quantile normalization (default is FALSE)
+#' @param lowess_norm Boolean flag for Lowess normalization (default is FALSE)
+#' @param rangescaling Boolean flag for range scaling (default is FALSE)
+#' @param paretoscaling Boolean flag for pareto scaling (default is FALSE)
+#' @param mstus Boolean flag for MSTUS normalization (default is FALSE)
+#' @param sva_norm Boolean flag for SVA normalization (default is FALSE)
+#' @param TIC_norm Boolean flag for TIC normalization (default is FALSE)
+#' @param eigenms_norm Boolean flag for EigenMS normalization (default is FALSE)
+#' @param madscaling Boolean flag for MAD scaling (default is FALSE)
+#' @param vsn_norm Boolean flag for VSN normalization (default is FALSE)
+#' @param cubicspline_norm Boolean flag for cubic spline normalization (default is FALSE)
+#' @param missing.val Value to replace missing data with (default is 0)
+#' @param samplermindex Sample RM Index (default is NA)
+#' @param rep.max.missing.thresh Maximum missing threshold for replicate (default is 0.5)
+#' @param summary.na.replacement Method to replace NA in summary (default is "zeros")
+#' @param featselmethod Feature selection method (default is NA)
+#' @param pairedanalysis Boolean flag for paired analysis (default is FALSE)
+#' @param input.intensity.scale Intensity scale of the input (default is "raw")
+#' @param create.new.folder Boolean flag to create new folder (default is TRUE)
+#' @param log2.transform.constant Constant for log2 transformation.
+#' @param alphabetical.order Boolean flag for alphabetical order (default is FALSE)
+
 data_preprocess <-
 function(Xmat=NA,Ymat=NA,feature_table_file=NA,parentoutput_dir,class_labels_file=NA,num_replicates=3,feat.filt.thresh=NA,summarize.replicates=TRUE,summary.method="mean",
                           all.missing.thresh=0.1,group.missing.thresh=0.8,normalization.method="none",
