@@ -40,176 +40,94 @@
 #' @param log2.transform.constant Constant for log2 transformation.
 #' @param alphabetical.order Boolean flag for alphabetical order (default is FALSE)
 
-data_preprocess <-
-function(Xmat=NA,Ymat=NA,feature_table_file=NA,parentoutput_dir,class_labels_file=NA,num_replicates=3,feat.filt.thresh=NA,summarize.replicates=TRUE,summary.method="mean",
-                          all.missing.thresh=0.1,group.missing.thresh=0.8,normalization.method="none",
-                          log2transform=FALSE,medcenter=FALSE,znormtransform=FALSE,quantile_norm=FALSE,lowess_norm=FALSE,rangescaling=FALSE,paretoscaling=FALSE,mstus=FALSE,sva_norm=FALSE,TIC_norm=FALSE,eigenms_norm=FALSE,
-                          madscaling=FALSE,vsn_norm=FALSE,
-                          cubicspline_norm=FALSE,
-                          missing.val=0,samplermindex=NA, rep.max.missing.thresh=0.5,summary.na.replacement="zeros",featselmethod=NA,pairedanalysis=FALSE,input.intensity.scale="raw",
-                          create.new.folder=TRUE,log2.transform.constant=1,alphabetical.order=FALSE){
-  
-  
-  options(warn=-1)
-  
-  #read file; First row is column headers
-  if(is.na(Xmat)==TRUE){
-    data_matrix<-read.table(feature_table_file,sep="\t",header=TRUE,stringsAsFactors=FALSE,check.names=FALSE)
-  }else{
-    data_matrix<-Xmat
-    #rm(Xmat)
-  }
-  
+data_preprocess <- function(
+  Xmat = NA,
+  Ymat = NA,
+  feature_table_file = NA,
+  parentoutput_dir,
+  class_labels_file = NA,
+  num_replicates = 3,
+  feat.filt.thresh = NA,
+  summarize.replicates = TRUE,
+  summary.method = "mean",
+  all.missing.thresh = 0.1,
+  group.missing.thresh = 0.8,
+  normalization.method = "none",
+  log2transform = FALSE,
+  medcenter = FALSE,
+  znormtransform = FALSE,
+  quantile_norm = FALSE,
+  lowess_norm = FALSE,
+  rangescaling = FALSE,
+  paretoscaling = FALSE,
+  mstus = FALSE,
+  sva_norm = FALSE,
+  TIC_norm = FALSE,
+  eigenms_norm = FALSE,
+  madscaling = FALSE,
+  vsn_norm = FALSE,
+  cubicspline_norm = FALSE,
+  missing.val = 0,
+  samplermindex = NA,
+  rep.max.missing.thresh = 0.5,
+  summary.na.replacement = "zeros",
+  featselmethod = NA,
+  pairedanalysis = FALSE,
+  input.intensity.scale = "raw",
+  create.new.folder = TRUE,
+  log2.transform.constant = 1,
+  alphabetical.order = FALSE
+) {
+
+  # Suppress warnings
+  options(warn = -1)
+
+  # Read the data file or use the given data matrix
+  data_matrix <- ifelse(
+    is.na(Xmat),
+    readr::read_table(feature_table_file, sep = "\t", col_names = TRUE, col_types = readr::cols(), na = character()),
+    Xmat
+  )
+
+  # Set working directory and create necessary folders
   setwd(parentoutput_dir)
-  
-  if(create.new.folder==TRUE){
-    dir.create("Stage1",showWarnings = FALSE)
+
+  if (create.new.folder) {
+    dir.create("Stage1", showWarnings = FALSE)
     setwd("Stage1")
-  }else{
-    
-    dir.create("Tables",showWarnings = FALSE)
+  } else {
+    dir.create("Tables", showWarnings = FALSE)
     setwd("Tables")
-    
-    
   }
-  
+
+  # Normalize the normalization.method parameter
   normalization.method=tolower(normalization.method)
+
+  # Simplified the logical checks for setting normalization methods
+  log2transform = normalization.method %in% c("log2quantilenorm", "log2transform", "sva_norm", "eigenms_norm")
+  quantile_norm = normalization.method == "log2quantilenorm" || normalization.method == "quantile_norm"
+  znormtransform = normalization.method == "znormtransform"
+  lowess_norm = normalization.method == "lowess_norm"
+  rangescaling = normalization.method == "rangescaling"
+  paretoscaling = normalization.method == "paretoscaling"
+  mstus = normalization.method == "mstus"
+  sva_norm = normalization.method == "sva_norm"
+  eigenms_norm = normalization.method == "eigenms_norm"
+  vsn_norm = normalization.method == "vsn_norm"
+  TIC_norm = normalization.method == "tic_norm"
+  cubicspline_norm = normalization.method == "cubicspline_norm"
+  madscaling = normalization.method == "mad_norm"
   
-  if(length(normalization.method)==1){
-    
-    valid_norm_options<-c("log2quantilenorm","log2transform","znormtransform","lowess_norm","quantile_norm","rangescaling","paretoscaling","mstus",
-                          "eigenms_norm","vsn_norm","sva_norm","none","tic_norm","cubicspline_norm","mad_norm")
-    
-    if(normalization.method%in%valid_norm_options){
-      
-     # print(paste("Performing ",normalization.method," normalization",sep=""))
-      
-    }else{
-      
-      stop(paste("Invalid normalization option. Valid options: ",paste(valid_norm_options,collapse=", "),sep=""))
-    }
-    
-    #if(FALSE)
-      {
-    if(normalization.method=="log2quantilenorm" || normalization.method=="log2quantnorm"){
-      #print("Performing log2 transformation and quantile normalization")
-      log2transform=TRUE
-      quantile_norm=TRUE
-      
-    }else{
-      if(normalization.method=="log2transform"){
-        #print("Performing log2 transformation")
-        log2transform=TRUE
-      }else{
-        if(normalization.method=="znormtransform"){
-          #print("Performing autoscaling")
-          znormtransform=TRUE
-          
-        }else{
-          if(normalization.method=="quantile_norm"){
-           # print("Performing quantile normalization")
-            quantile_norm=TRUE
-          }else{
-            if(normalization.method=="lowess_norm"){
-             # print("Performing Cyclic Lowess normalization")
-              lowess_norm=TRUE
-            }else{
-              
-              if(normalization.method=="rangescaling"){
-               # print("Performing Range scaling")
-                rangescaling=TRUE
-              }else{
-                if(normalization.method=="paretoscaling"){
-                 # print("Performing Pareto scaling")
-                  paretoscaling=TRUE
-                }else{
-                  
-                  if(normalization.method=="mstus"){
-                    
-                   # print("Performing MS Total Useful Signal (MSTUS) normalization")
-                    mstus=TRUE
-                  }else{
-                    
-                    if(normalization.method=="sva_norm"){
-                      
-                     # print("Performing Surrogate Variable Analysis (SVA) normalization")
-                      sva_norm=TRUE
-                      log2transform=TRUE
-                    }else{
-                      if(normalization.method=="eigenms_norm"){
-                       # print("Performing EigenMS normalization")
-                        eigenms_norm=TRUE
-                        if(input.intensity.scale=="raw"){
-                          log2transform=TRUE
-                        }
-                        
-                      }else{
-                        if(normalization.method=="vsn_norm"){
-                          #print("Performing variance stabilizing normalization")
-                          vsn_norm=TRUE
-                          
-                        }else{
-                          
-                          if(normalization.method=="tic_norm"){
-                            
-                            #print("Performing totial ion intensity normalization")
-                            
-                            TIC_norm=TRUE
-                          }else{
-                            
-                            if(normalization.method=="cubicspline_norm"){
-                              
-                              
-                             # print("Cubic spline normalization")
-                              
-                              cubicspline_norm=TRUE
-                            }else{
-                              
-                              
-                              if(normalization.method=="mad_norm"){
-                                
-                              #  print("Median absolute deviation normalization")
-                                madscaling=TRUE
-                              }
-                            }
-                            
-                          }
-                          
-                        }
-                        
-                        
-                      }
-                    }
-                    
-                  }
-                  
-                  
-                }
-                
-              }
-              
-            }
-            
-          }
-          
-          
-        }
-      }
-      
-      
-    }
-    
-    
-    }
-  }
   cnames<-colnames(data_matrix)
   cnames<-tolower(cnames)
   
   
-  if(input.intensity.scale=="log2"){
-    
-    log2transform=FALSE
+  # If the input intensity scale is "log2", then we will not perform the log2 transformation
+  if (input.intensity.scale == "log2") {
+    log2transform = FALSE
   }
+
+  # Check if the data matrix has "name" in its column names
   check_names<-grep(cnames,pattern="^name$")
   
   names_with_mz_time<-NA
@@ -273,117 +191,89 @@ function(Xmat=NA,Ymat=NA,feature_table_file=NA,parentoutput_dir,class_labels_fil
   data_matrix<-X
   #print(head(data_matrix))
   
-  if(is.na(all.missing.thresh)==TRUE){
-    
-    all.missing.thresh=(-1)
+  # Set a missing threshold if not specified
+  if (is.na(all.missing.thresh)) {
+    all.missing.thresh = -1
   }
   
-  if(is.na(samplermindex)==FALSE){
-    data_matrix<-data_matrix[,-c(samplermindex)]
+  # Remove columns corresponding to 'samplermindex'
+  if (!is.na(samplermindex)) {
+    data_matrix <- data_matrix[, -samplermindex]
   }
   
-  #use only unique records
-  data_matrix<-unique(data_matrix)
+  # Keep only unique records
+  data_matrix <- unique(data_matrix)
   
-  if(is.na(missing.val)==FALSE){
-    
-    #print("Replacing missing values with NAs.")
-    data_matrix<-replace(as.matrix(data_matrix),which(data_matrix==missing.val),NA)
+  # Replace missing values with NAs
+  if (!is.na(missing.val)) {
+    data_matrix <- replace(as.matrix(data_matrix), which(data_matrix == missing.val), NA)
   }
 
-  data_matrix_orig<-data_matrix
-  
-  
-  snames<-colnames(data_matrix)
-  
-  dir.create(parentoutput_dir,showWarnings=FALSE)
- 
-  fheader="transformed_log2fc_threshold_"
+  data_matrix_orig <- data_matrix
 
+  # Get sample names
+  snames <- colnames(data_matrix)
+
+  # Create directory for output
+  dir.create(parentoutput_dir, showWarnings = FALSE)
+
+  fheader = "transformed_log2fc_threshold_"
+
+  data_m <- as.matrix(data_matrix[, -c(1:2)])
   
-  data_m<-as.matrix(data_matrix[,-c(1:2)])
   
- 
-  
-  #Step 2) Average replicates
-  if(summarize.replicates==TRUE)
-  {
-    if(num_replicates>1)
-    {
+  # Step 2: Average replicates
+  if(summarize.replicates == TRUE) {
+    if(num_replicates > 1) {
+      # Apply the function getSumreplicates to data_matrix
+      # This function is assumed to be from another R package
+      # If it is not, please replace package_name with the appropriate package
+      data_m <- getSumreplicates(data_matrix, alignment.tool = "apLCMS", numreplicates = num_replicates, numcluster = 10, rep.max.missing.thresh = rep.max.missing.thresh, summary.method = summary.method, summary.na.replacement, missing.val = missing.val)
       
-      data_m<-getSumreplicates(data_matrix,alignment.tool="apLCMS",numreplicates=num_replicates,numcluster=10,rep.max.missing.thresh=rep.max.missing.thresh,summary.method=summary.method,summary.na.replacement, missing.val=missing.val)
+      # Replace NA values with the missing_val
+      data_m <- replace(data_m, which(is.na(data_m) == TRUE), missing.val)
       
-      #data_m<-round(data_m,3)
+      # Print messages and generate filenames based on the summary.method
+      filename <- switch(
+        summary.method,
+        "mean" = { print("Replicate averaging done"); "Rawdata_averaged.txt"},
+        "median" = { print("Replicate median summarization done"); "Rawdata_median_summarized.txt"},
+        NA
+      )
       
-      data_m<-replace(data_m,which(is.na(data_m)==TRUE),missing.val)
+      # Write the resulting data matrix to a file
+      write.table(cbind(data_matrix[, 1:2], data_m), file = filename, sep = "\t", row.names = FALSE)
       
-      if(summary.method=="mean"){
-        print("Replicate averaging done")
-        filename<-paste("Rawdata_averaged.txt",sep="")
-      }else{
-        if(summary.method=="median"){
-          print("Replicate median summarization done")
-          filename<-paste("Rawdata_median_summarized.txt",sep="")
-        }
-        
-      }
-      
-      data_m_prenorm<-cbind(data_matrix[,c(1:2)],data_m)
-      
-      write.table(data_m_prenorm, file=filename,sep="\t",row.names=FALSE)
-      
-      data_matrix<-cbind(data_matrix[,c(1:2)],data_m)
-    
+      # Update data_matrix
+      data_matrix <- cbind(data_matrix[, 1:2], data_m)
     }
   }
   
   
-  data_matrix<-cbind(data_matrix[,c(1:2)],data_m)
-  
-  data_matrix_orig<-data_matrix
-  data_subjects<-data_m
-  
-  ordered_labels={}
-  
-  num_samps_group<-new("list")
+  # Continue with the original dataset if no averaging was done
+  data_matrix <- cbind(data_matrix[, 1:2], data_m)
+  data_matrix_orig <- data_matrix
+  data_subjects <- data_m
+  ordered_labels <- list()
+  num_samps_group <- new("list")
   
   
+  # If class labels are provided, process the labels
+  if (!is.na(class_labels_file)) {
+    data_matrix <- list()
   
-  if(is.na(class_labels_file)==FALSE)
-  {
-    
-    #print("Class labels file:")
-   # print(class_labels_file)
-    
-    data_matrix={}
-    
-    if(is.na(Ymat)==TRUE){
-      classlabels<-read.table(class_labels_file,sep="\t",header=TRUE,stringsAsFactors = FALSE,check.names = FALSE)
-    }else{
-      classlabels<-Ymat
+    # Load class labels from the file or use the provided matrix
+    classlabels <- if (is.na(Ymat)) {
+      readr::read_table(class_labels_file, sep="\t", header=TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+    } else {
+      Ymat
     }
-    
-    #class_labels_sampnames<-classlabels[,1]
-    #data_matrix_sampnames<-colnames(data_m)
-    
-    #classlabels<-classlabels[match(class_labels_sampnames,data_matrix_sampnames),]
-    
-    classlabels<-as.data.frame(classlabels)
-    if(pairedanalysis==TRUE){
-      classlabels<-classlabels[,-c(2)]
-      
-    }
-    
-    
-    
     
     cnames1<-colnames(classlabels)
     cnames1[1]<-c("SampleID")
     cnames1[2]<-c("Class")
     
-    
     colnames(classlabels)<-cnames1 #c("SampleID","Class")
-    
     
     f1<-table(classlabels$SampleID)
     
@@ -398,44 +288,33 @@ function(Xmat=NA,Ymat=NA,feature_table_file=NA,parentoutput_dir,class_labels_fil
       class_labels_levels<-class_labels_levels[-bad_rows]
     }
     
-    for(c in 1:length(class_labels_levels))
-    {
-      
-      if(c>1){
-        data_matrix<-cbind(data_matrix,data_subjects[,which(classlabels[,2]==class_labels_levels[c])])
-      }else{
-        data_matrix<-data_subjects[,which(classlabels[,2]==class_labels_levels[c])]
-      }
-      classlabels_index<-which(classlabels[,2]==class_labels_levels[c])
-      ordered_labels<-c(ordered_labels,as.character(classlabels[classlabels_index,2]))
-      num_samps_group[[c]]<-length(classlabels_index)
-      
+    # Update the matrix based on the class labels
+    for(c in 1:length(class_labels_levels)) {
+      classlabels_index <- which(classlabels[, 2] == class_labels_levels[c])
+      ordered_labels <- c(ordered_labels, as.character(classlabels[classlabels_index, 2]))
+      num_samps_group[[c]] <- length(classlabels_index)
     }
+  
+    data_matrix <- cbind(data_matrix_orig[, 1:2], data_matrix)
+    data_m <- as.matrix(data_matrix[, -c(1:2)])
     
-    #colnames(data_matrix)<-as.character(ordered_labels)
-    data_matrix<-cbind(data_matrix_orig[,c(1:2)],data_matrix)
-    data_m<-as.matrix(data_matrix[,-c(1:2)])
     
-    
-  }else
-  {
-    if(is.na(Ymat)==TRUE)
-    {
-      classlabels<-rep("A",dim(data_m)[2])
-      classlabels<-as.data.frame(classlabels)
-      ordered_labels<-classlabels
-      num_samps_group[[1]]<-dim(data_m)[2]
-      class_labels_levels<-c("A")
-      data_m<-as.matrix(data_matrix[,-c(1:2)])
-      
-    }else{
-      classlabels<-Ymat
-      classlabels<-as.data.frame(classlabels)
-      
-      if(pairedanalysis==TRUE){
-        classlabels<-classlabels[,-c(2)]
+    } else {
+      if(is.na(Ymat)==TRUE)
+      {
+        classlabels<-rep("A",dim(data_m)[2])
+        classlabels<-as.data.frame(classlabels)
+        ordered_labels<-classlabels
+        num_samps_group[[1]]<-dim(data_m)[2]
+        class_labels_levels<-c("A")
+        data_m<-as.matrix(data_matrix[,-c(1:2)])
+      } else {
+        classlabels<-Ymat
+        classlabels<-as.data.frame(classlabels)
         
-      }
+        if(pairedanalysis==TRUE){
+          classlabels<-classlabels[,-c(2)]
+        }
       
       cnames1<-colnames(classlabels)
       cnames1[1]<-c("SampleID")
@@ -472,42 +351,24 @@ function(Xmat=NA,Ymat=NA,feature_table_file=NA,parentoutput_dir,class_labels_fil
         classlabels_index<-which(classlabels[,2]==class_labels_levels[c])
         ordered_labels<-c(ordered_labels,as.character(classlabels[classlabels_index,2]))
         num_samps_group[[c]]<-length(classlabels_index)
-        
       }
-      
-     
     }
-    
-    
-    
   }
   
-  # ##save(class_labels_levels,file="class_labels_levels.Rda")
-  #      ##save(classlabels,file="classlabels1.Rda")
-  #  ##save(num_samps_group,file="num_samps_group.Rda")
-  ###save(ordered_labels,file="ordered_labels1.Rda")
+    
+  # Check if sample names match
+  rnames_xmat <- colnames(data_matrix[, -c(1:2)])
   
-  rnames_xmat<-colnames(data_matrix[,-c(1:2)])
-  
-  if(is.na(classlabels)==FALSE){
-    
-    
-    rnames_ymat<-as.character(classlabels[,1])
-  }else{
-    rnames_ymat<-rnames_xmat
-    
+  if (!is.na(classlabels)) {
+    rnames_ymat <- as.character(classlabels[, 1])
+  } else {
+    rnames_ymat <- rnames_xmat
   }
-  
- 
-  
   
   if(all(rnames_xmat==rnames_ymat)==FALSE){
-    
     stop("Sample names do not match between feature table and classlabels. Please try replacing spaces and - with .")
   }
-  
-  
- 
+
   
   #Step 3a) Remove features if signal is not detected in at least x% of all samples
   ##################################################################################
