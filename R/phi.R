@@ -1,2 +1,4 @@
 phi <-
-function(x){dnorm(x)}
+    function(x) {
+        dnorm(x)
+    }
